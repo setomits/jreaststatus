@@ -1,3 +1,1 @@
-cssselect==0.9.1
-lxml==3.6.0
-pyquery==1.2.13
+lxml
