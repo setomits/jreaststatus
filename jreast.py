@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from pyquery import PyQuery
+from lxml import html
 
 class JREast:
     URL = 'http://traininfo.jreast.co.jp/train_info/{}.aspx'
@@ -27,6 +27,7 @@ class JREast:
                   '山手線',
 
                   '上野東京ライン', '湘南新宿ライン'),
+
         'tohoku': ('羽越本線', '奥羽本線', '奥羽本線（山形線）', '常磐線', 
                    '仙山線', '仙石線', '仙石東北ライン', '東北本線',
                    '磐越西線', '左沢線', '石巻線', '大船渡線', 
@@ -41,33 +42,50 @@ class JREast:
         }
 
 
-    def __init__(self, area):
-        if area in JREast.lines.keys():
-            self.area = area
-            self.url = JREast.URL.format(area)
-
     def status(self, line):
-        m = {'line': line, 'status': None}
+        self.area = None
 
-        if line not in JREast.lines[self.area]:
+        for area in JREast.lines:
+            for l in JREast.lines[area]:
+                if l == line:
+                    self.area = area
+                    break
+
+            if self.area:
+                break
+
+        m = {'area': self.area, 'line': line, 'status': None}
+
+        if self.area:
+            url = JREast.URL.format(self.area)
+        else:
             return m
 
-        html = PyQuery(self.url)
-        th = html('th.text-tit-xlarge').filter(
-            lambda i:PyQuery(this).text() == line).eq(0)
-        m['status'] = th.siblings('td.acess_i').find('img').eq(0).attr('alt')
+        dom = html.parse(url)
 
+        th = None
+        for ele in dom.xpath('//th[@class="text-tit-xlarge"]'):
+            if ele.text.strip() == line:
+                th = ele
+                break
+        else:
+            return m
+
+        td = th.getnext()
+        m['status'] = td.xpath('img')[0].attrib['alt']
         if m['status'] != '平常運転':
-            m['publishedAt'] = th.siblings('td').eq(1).text()
-            tr = th.closest('tr').nextAll('tr').eq(0)
-            m['detail'] = tr('td.cause').eq(0).text()
-
+            td = td.getnext()
+            m['publishedAt'] = td.text.strip()
+            td = th.getparent().xpath('//td[@class="cause"]')[0]
+            m['detail'] = td.text.strip()
+            
         return m
 
 
 if __name__ == '__main__':
-    jr = JREast('tohoku')
-    result = jr.status('山田線')
-    print(result['status'])
-    if 'publishedAt' in result:
-        print(result['publishedAt'], result['detail'])
+    import pprint
+
+    jr = JREast()
+
+    pprint.pprint(jr.status('山田線'))
+    pprint.pprint(jr.status('京葉線'))
