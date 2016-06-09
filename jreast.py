@@ -42,6 +42,19 @@ class JREast:
         }
 
 
+    def _extract_status(self, th):
+        s = {}
+
+        td = th.getnext()
+        s['status'] = td.xpath('img')[0].attrib['alt']
+        if s['status'] != '平常運転':
+            td = td.getnext()
+            s['publishedAt'] = td.text.strip()
+            td = th.getparent().getnext().xpath('td[@class="cause"]')[0]
+            s['detail'] = td.text.strip()
+
+        return s
+
     def status(self, line):
         self.area = None
 
@@ -54,7 +67,7 @@ class JREast:
             if self.area:
                 break
 
-        m = {'area': self.area, 'line': line, 'status': None}
+        m = {'area': self.area, 'line': line, 'statuses': []}
 
         if self.area:
             url = JREast.URL.format(self.area)
@@ -64,20 +77,9 @@ class JREast:
         dom = html.parse(url)
 
         th = None
-        for ele in dom.xpath('//th[@class="text-tit-xlarge"]'):
-            if ele.text.strip() == line:
-                th = ele
-                break
-        else:
-            return m
-
-        td = th.getnext()
-        m['status'] = td.xpath('img')[0].attrib['alt']
-        if m['status'] != '平常運転':
-            td = td.getnext()
-            m['publishedAt'] = td.text.strip()
-            td = th.getparent().getnext().xpath('td[@class="cause"]')[0]
-            m['detail'] = td.text.strip()
+        for node in dom.xpath('//th[@class="text-tit-xlarge"]'):
+            if node.text.strip() == line:
+                m['statuses'].append(self._extract_status(node))
             
         return m
 
