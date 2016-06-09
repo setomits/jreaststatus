@@ -15,7 +15,6 @@ This is a python3 library to fetch service statuses of JR lines.
 
 >>> pprint.pprint(jr.status('石巻線'))
 {'area': 'tohoku',
- 
  'line': '石巻線',
  'statuses': [{'detail': '石巻線は、大雨の影響で、石巻～女川駅間の上下線で運転を見合わせています。',
                'publishedAt': '2016年6月9日4時1分 配信',
