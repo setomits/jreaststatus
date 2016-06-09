@@ -76,7 +76,7 @@ class JREast:
         if m['status'] != '平常運転':
             td = td.getnext()
             m['publishedAt'] = td.text.strip()
-            td = th.getparent().xpath('//td[@class="cause"]')[0]
+            td = th.getparent().getnext().xpath('td[@class="cause"]')[0]
             m['detail'] = td.text.strip()
             
         return m
